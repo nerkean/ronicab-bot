@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Политика конфиденциальности</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-main: #000000;
+            --text-muted: #666666;
+            --border-color: #E5E5E5;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 32px 24px 64px;
+            animation: fadeIn 0.6s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            margin-top: 0;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-top: 32px;
+            margin-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        p {
+            font-size: 15px;
+            margin-bottom: 16px;
+            color: #333333;
+        }
+
+        ul {
+            margin-bottom: 24px;
+            padding-left: 20px;
+        }
+
+        li {
+            font-size: 15px;
+            margin-bottom: 8px;
+            color: #333333;
+        }
+
+        strong {
+            color: var(--text-main);
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Политика конфиденциальности.</h1>
+        <div class="subtitle">Использование данных и безопасность Telegram Web App</div>
+
+        <p>Добро пожаловать в Telegram-бота для оформления заказов на арты. Мы с уважением относимся к вашим личным данным и обязуемся защищать вашу конфиденциальность.</p>
+        
+        <h2>1. Какие данные мы собираем</h2>
+        <ul>
+            <li><strong>Базовые данные профиля Telegram:</strong> Ваш Telegram ID, имя пользователя (@username), имя и фамилия (если указаны). Эта информация передается боту самим мессенджером.</li>
+            <li><strong>Информация о заказе:</strong> Детали заказа (формат, цвет), текстовое описание (ТЗ) и любые ссылки, которые вы предоставляете.</li>
+            <li><strong>Медиафайлы:</strong> Изображения (референсы), которые вы загружаете через форму оформления.</li>
+        </ul>
+        
+        <h2>2. Как мы используем ваши данные</h2>
+        <p>Мы используем собранную информацию исключительно в следующих целях:</p>
+        <ul>
+            <li><strong>Обработка заказов:</strong> Для связи с вами, уточнения деталей и выполнения вашей заявки художником.</li>
+            <li><strong>Безопасность:</strong> Все загруженные изображения автоматически проверяются нейросетью (Sightengine API) на наличие запрещенного контента (18+). Картинки, не прошедшие проверку, моментально отклоняются и не доходят до художника.</li>
+        </ul>
+        
+        <h2>3. Защита и передача данных</h2>
+        <p>Мы гарантируем, что ваши личные данные, идеи заказов и загруженные референсы:</p>
+        <ul>
+            <li><strong>Не передаются</strong>, не продаются и не сдаются в аренду третьим лицам или рекламным сетям.</li>
+            <li><strong>Используются только</strong> администратором (художником) для выполнения конкретного заказа.</li>
+            <li><strong>Хранятся</strong> в защищенной базе данных MongoDB, доступ к которой строго ограничен.</li>
+        </ul>
+        
+        <h2>4. Ваши права</h2>
+        <p>Вы в любой момент можете попросить нас удалить историю ваших заказов из нашей базы данных, обратившись к художнику напрямую в личные сообщения.</p>
+        
+        <h2>5. Согласие с правилами</h2>
+        <p>Используя нашего бота и отправляя форму заказа, вы автоматически соглашаетесь с условиями данной Политики конфиденциальности.</p>
+    </div>
+</body>
+</html>

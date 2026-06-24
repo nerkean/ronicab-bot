@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Оформление заказа</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --bg: #ffffff; --surface: #f9f9f9; --text: #000000; --muted: #666666; --border: #E5E7EB; --accent: #000000; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px 20px 100px; -webkit-font-smoothing: antialiased; transition: opacity 0.3s;}
+        body.loading { opacity: 0; }
+        
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+        h1 { font-size: 26px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
+        .lang-switch { background: var(--surface); border: 1px solid var(--border); padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: 0.2s;}
+        .lang-switch:active { transform: scale(0.95); }
+
+        .form-group { margin-bottom: 24px; }
+        label.main-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+        
+        select, textarea { width: 100%; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); font-family: 'Inter'; font-size: 15px; background: var(--surface); box-sizing: border-box; outline: none; transition: 0.2s; color: var(--text); }
+        select:focus, textarea:focus { border-color: var(--accent); background: var(--bg); }
+        textarea { min-height: 100px; resize: vertical; }
+
+        .urgent-card { background: #FFF9E5; border: 2px solid #FFB800; border-radius: 16px; padding: 16px; display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+        .urgent-text { flex: 1; display: flex; flex-direction: column; }
+        .urgent-title { font-size: 16px; font-weight: 800; color: #000; margin-bottom: 4px; line-height: 1.2;}
+        .urgent-desc { font-size: 13px; color: #8A6D00; font-weight: 500; line-height: 1.3;}
+        
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; flex-shrink: 0; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #FFB800; }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        .file-upload { position: relative; border: 2px dashed var(--border); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: 0.2s; background: var(--surface); }
+        .file-upload:hover { border-color: var(--accent); }
+        .file-upload input { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; z-index: 2; }
+        .file-upload .text { font-size: 15px; color: var(--text); font-weight: 600; }
+        .file-upload .req-text { font-size: 12px; color: var(--muted); margin-top: 6px; }
+        .preview-img { max-width: 100%; border-radius: 8px; margin-top: 12px; display: none; position: relative; z-index: 3; }
+
+        .bottom-bar { position: fixed; bottom: 0; left: 0; width: 100%; background: var(--bg); border-top: 1px solid var(--border); padding: 16px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 -4px 20px rgba(0,0,0,0.05); z-index: 10; }
+        .price-col .total-label { display: block; font-size: 12px; color: var(--muted); text-transform: uppercase; font-weight: 600; margin-bottom: 2px;}
+        .price-col .price-value { font-size: 22px; font-weight: 800; transition: 0.3s color; color: var(--text); display: inline-flex; align-items: baseline; gap: 4px;}
+        .price-col .price-value.urgent { color: #FFB800; }
+        .price-col .currency { font-size: 16px; font-weight: 600; }
+        
+        button.btn-submit { padding: 14px 24px; background: var(--accent); color: #fff; font-weight: 600; border: none; border-radius: 12px; font-size: 15px; cursor: pointer; transition: 0.2s; }
+        button.btn-submit:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+.portfolio-slider { 
+    display: flex; 
+    gap: 12px; 
+    overflow-x: auto; 
+    padding-bottom: 12px; 
+    scroll-snap-type: x mandatory; 
+    -webkit-overflow-scrolling: touch;
+}
+.portfolio-slider::-webkit-scrollbar { height: 4px; }
+.portfolio-slider::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+.portfolio-item { 
+    flex: 0 0 140px; 
+    scroll-snap-align: start; 
+    display: flex; 
+    flex-direction: column; 
+    gap: 8px; 
+}
+.portfolio-item img { 
+    width: 100%; 
+    height: 180px; 
+    object-fit: cover; 
+    border-radius: 12px; 
+    border: 1px solid var(--border); 
+}
+.portfolio-item span { 
+    font-size: 13px; 
+    font-weight: 600; 
+    text-align: center; 
+    color: var(--muted); 
+}
+    </style>
+</head>
+<body class="loading">
+    <div class="header-top">
+        <h1 data-i18n="web_title">Оформление заказа</h1>
+        <button class="lang-switch" onclick="toggleLang()">
+            🌍 <span id="current-lang">RU</span>
+        </button>
+    </div>
+    <p class="subtitle" data-i18n="web_subtitle">Заполни данную форму, и я сразу покажу цену</p>
+
+    <div class="form-group">
+    <label class="main-label" data-i18n="web_portfolio_title">Примеры работ</label>
+    <div class="portfolio-slider">
+        <div class="portfolio-item">
+            <img src="https://placehold.co/300x400/e2e8f0/64748b?text=Скетч" alt="Sketch">
+            <span data-i18n="web_opt_sketch">✏️ Скетч</span>
+        </div>
+        <div class="portfolio-item">
+            <img src="https://placehold.co/300x400/e2e8f0/64748b?text=Базовый+Цвет" alt="Flat">
+            <span data-i18n="web_opt_flat">🎨 Базовые цвета</span>
+        </div>
+        <div class="portfolio-item">
+            <img src="https://placehold.co/300x400/e2e8f0/64748b?text=Рендер" alt="Render">
+            <span data-i18n="web_opt_render">✨ Фулл рендер</span>
+        </div>
+    </div>
+</div>
+
+    <div class="form-group urgent-card">
+        <div class="urgent-text">
+            <span class="urgent-title" data-i18n="web_urgent">⚡️ Срочный заказ</span>
+            <span class="urgent-desc" data-i18n="web_urgent_desc">Займусь артом вне очереди (+50% к цене)</span>
+        </div>
+        <label class="switch">
+            <input type="checkbox" id="urgent" class="price-trigger">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div class="form-group">
+        <label class="main-label" data-i18n="web_format">Размер / Формат</label>
+        <select id="format" class="price-trigger">
+            <option value="Full body" data-price="250" data-i18n="web_opt_full">🧍 В полный рост (250 грн)</option>
+            <option value="Half body" data-price="150" data-i18n="web_opt_half">👕 По пояс (150 грн)</option>
+            <option value="Avatar" data-price="100" data-i18n="web_opt_avatar">👤 Аватарка (100 грн)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label class="main-label" data-i18n="web_color">Стиль / Покрас</label>
+        <select id="color" class="price-trigger">
+            <option value="Sketch" data-price="0" data-i18n="web_opt_sketch">✏️ Скетч (+0 грн)</option>
+            <option value="Flat Colors" data-price="50" data-i18n="web_opt_flat">🎨 Базовые цвета (+50 грн)</option>
+            <option value="Full Render" data-price="150" data-i18n="web_opt_render">✨ Фулл рендер (+150 грн)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label class="main-label" data-i18n="web_desc">Описание (ТЗ, пожелания, референсы)</label>
+        <textarea id="description" data-i18n-ph="web_desc_ph" placeholder="Пример: хочу арт в стиле киберпанк..."></textarea>
+    </div>
+
+    <div class="form-group">
+        <label class="main-label" data-i18n="web_ref">Референс (Картинка)</label>
+        <div class="file-upload" id="upload-box">
+            <input type="file" id="image" accept="image/jpeg, image/png, image/webp">
+            <div class="text" id="upload-text" data-i18n="web_upload">📸 Прикрепить фото</div>
+            <div class="req-text" data-i18n="web_upload_req">Макс. размер 10 МБ (JPEG, PNG)</div>
+            <img id="preview" class="preview-img">
+        </div>
+    </div>
+
+    <div class="bottom-bar">
+        <div class="price-col">
+            <span class="total-label" data-i18n="web_total">Итого к оплате:</span>
+            <div class="price-value" id="price-container">
+                <span id="total-price">0</span>
+                <span class="currency">грн</span>
+            </div>
+        </div>
+        <button id="submit-btn" class="btn-submit" data-i18n="web_submit">Отправить заявку</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+
+        let currentPrice = 0;
+        let uploadedImageBase64 = null;
+        let langDict = {};
+        let currentLangCode = 'ru';
+
+        async function loadLanguage(langOverride) {
+            const code = langOverride || tg.initData?.user?.language_code || 'ru';
+            currentLangCode = ['ru', 'uk', 'be', 'kk', 'uz'].includes(code) ? 'ru' : 'en';
+            
+            document.getElementById('current-lang').innerText = currentLangCode.toUpperCase();
+            
+            try {
+                const res = await fetch(`/api/locales/${currentLangCode}`);
+                langDict = await res.json();
+                
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    if (langDict[el.getAttribute('data-i18n')]) el.innerHTML = langDict[el.getAttribute('data-i18n')];
+                });
+                document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                    if (langDict[el.getAttribute('data-i18n-ph')]) el.placeholder = langDict[el.getAttribute('data-i18n-ph')];
+                });
+            } catch (e) { console.error("i18n error", e); }
+            document.body.classList.remove('loading');
+        }
+
+        function toggleLang() {
+            loadLanguage(currentLangCode === 'ru' ? 'en' : 'ru');
+        }
+
+        function calculatePrice() {
+            const formatSelect = document.getElementById('format');
+            const colorSelect = document.getElementById('color');
+            const isUrgent = document.getElementById('urgent').checked;
+            
+            const basePrice = parseInt(formatSelect.options[formatSelect.selectedIndex].getAttribute('data-price')) + 
+                              parseInt(colorSelect.options[colorSelect.selectedIndex].getAttribute('data-price'));
+            
+            currentPrice = isUrgent ? Math.round(basePrice * 1.5) : basePrice;
+            document.getElementById('total-price').innerText = currentPrice;
+            document.getElementById('price-container').classList.toggle('urgent', isUrgent);
+        }
+
+        document.querySelectorAll('.price-trigger').forEach(el => el.addEventListener('change', calculatePrice));
+        loadLanguage();
+
+        document.getElementById('image').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX = 1000;
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } } 
+                    else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                    
+                    document.getElementById('preview').src = uploadedImageBase64;
+                    document.getElementById('preview').style.display = 'block';
+                    document.getElementById('upload-text').innerText = langDict['web_upload_ok'] || '✅ Фото загружено';
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('submit-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('submit-btn');
+    btn.disabled = true;
+
+    const payload = {
+        format: document.getElementById('format').value,
+        color: document.getElementById('color').value,
+        description: document.getElementById('description').value,
+        imageBase64: uploadedImageBase64,
+        price: currentPrice,
+        isUrgent: document.getElementById('urgent').checked,
+        initData: tg.initData
+    };
+
+    if (!payload.initData) {
+        const fallbackId = prompt("ID:") || 1;
+        payload.initData = `user=${encodeURIComponent(JSON.stringify({ id: parseInt(fallbackId) }))}&hash=TEST_MODE`;
+    }
+
+    try {
+        const res = await fetch('/api/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+        if (res.ok) tg.close();
+        else tg.showAlert(await res.text());
+    } catch (error) { 
+        tg.showAlert(langDict['web_error'] || "Системная ошибка."); 
+    } finally { 
+        btn.disabled = false; 
+    }
+});
+    </script>
+</body>
+</html>

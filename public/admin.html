@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Панель управления</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { --bg-color: #f5f5f5; --surface: #ffffff; --text-main: #000000; --text-muted: #666666; --border-color: #E5E5E5; --accent: #000000; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; -webkit-font-smoothing: antialiased; }
+
+        .header { background: var(--surface); padding: 20px 24px; border-bottom: 1px solid var(--border-color); position: sticky; top: 0; z-index: 10; }
+        .header h1 { margin: 0; font-size: 20px; font-weight: 800; }
+        
+        .tabs { display: flex; gap: 16px; margin-top: 16px; overflow-x: auto; padding-bottom: 4px; white-space: nowrap; }
+        .tab-btn { padding: 8px 16px; background: none; border: none; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-radius: 8px; transition: 0.2s; }
+        .tab-btn.active { background: var(--accent); color: #fff; }
+
+        .container { padding: 24px; max-width: 800px; margin: 0 auto; }
+        .tab-content { display: none; animation: fadeIn 0.3s; }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+        .stat-card { background: var(--surface); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); text-align: center; }
+        .stat-card span { display: block; font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase;}
+        .stat-card b { display: block; font-size: 24px; margin-top: 4px; }
+
+        .order-card { background: var(--surface); padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: 0.2s; }
+        .order-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .order-info strong { display: block; font-size: 15px; margin-bottom: 4px; }
+        .order-info span { font-size: 13px; color: var(--text-muted); }
+        
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; text-transform: uppercase; white-space: nowrap;}
+        .badge.pending { background: #fff3cd; color: #856404; }
+        .badge.accepted { background: #d4edda; color: #155724; }
+        .badge.waitlist { background: #e2e3e5; color: #383d41; }
+        .badge.declined { background: #f8d7da; color: #721c24; }
+        .badge.completed { background: #cce5ff; color: #004085; }
+        .badge.awaiting_payment { background: #e0cffc; color: #43129c; }
+
+        textarea { width: 100%; padding: 16px; border-radius: 12px; border: 1px solid var(--border-color); font-family: 'Inter'; font-size: 15px; min-height: 150px; margin-bottom: 16px; box-sizing: border-box; resize: vertical; }
+        button.btn-primary { width: 100%; padding: 14px; background: var(--accent); color: #fff; font-weight: 600; border: none; border-radius: 12px; cursor: pointer; font-size: 15px; transition: 0.2s; }
+        button.btn-primary:active { opacity: 0.8; }
+        
+        .loader { text-align: center; color: var(--text-muted); padding: 40px; font-weight: 500;}
+
+        .pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin-top: 24px; }
+        .pagination span { font-size: 14px; font-weight: 600; color: var(--text-muted); }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 100; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box;}
+        .modal { background: var(--surface); width: 100%; max-width: 500px; border-radius: 16px; padding: 24px; position: relative; max-height: 90vh; overflow-y: auto; animation: fadeIn 0.2s; }
+        .modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 24px; color: var(--text-muted); cursor: pointer; }
+        .modal h2 { margin-top: 0; font-size: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px;}
+        .detail-row { margin-bottom: 12px; font-size: 14px; }
+        .detail-row span { color: var(--text-muted); display: block; font-size: 12px; text-transform: uppercase; margin-bottom: 2px;}
+        .modal-img { width: 100%; border-radius: 8px; margin-top: 12px; max-height: 300px; object-fit: contain; background: #f0f0f0; }
+        .modal-actions { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
+        .btn-danger { background: #dc3545 !important; }
+        .btn-warning { background: #ffc107 !important; color: #000 !important; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Панель управления</h1>
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">Заказы</button>
+            <button class="tab-btn" onclick="switchTab('broadcast')">Рассылка</button>
+            <button class="tab-btn" onclick="switchTab('banned')">Заблокированные</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- ТАБ: ДАШБОРД -->
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid" id="stats-container"></div>
+            <h3>Список заказов</h3>
+            <div id="orders-container"><div class="loader">Загрузка данных...</div></div>
+            
+            <!-- Блок пагинации -->
+            <div id="pagination" class="pagination"></div>
+        </div>
+
+        <!-- ТАБ: РАССЫЛКА -->
+        <div id="broadcast" class="tab-content">
+            <h3>Рассылка по клиентам</h3>
+            <p style="font-size:14px; color:#666; margin-bottom:16px;">Сообщение будет отправлено всем пользователям.</p>
+            
+            <!-- НОВОЕ: Загрузка картинки для рассылки -->
+            <div id="bc-upload-wrapper" style="border: 2px dashed var(--border-color); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; position: relative; margin-bottom: 16px; transition: 0.2s;">
+                <input type="file" id="bc-image-upload" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;" accept="image/jpeg, image/png, image/webp">
+                <div style="font-size: 14px; color: var(--text-muted); font-weight: 500;">
+                    <span style="display: block; font-size: 24px; margin-bottom: 4px;">📸</span>
+                    Прикрепить картинку (опционально)
+                </div>
+            </div>
+            
+            <div id="bc-preview-container" style="display: none; position: relative; margin-bottom: 16px;">
+                <img id="bc-image-preview" style="width: 100%; border-radius: 12px; max-height: 250px; object-fit: cover;">
+                <button id="bc-remove-image" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;">✕</button>
+            </div>
+
+            <textarea id="broadcast-text" placeholder="Пример: Привет! Я открыла 5 новых слотов..."></textarea>
+            <button class="btn-primary" id="send-broadcast">ОТПРАВИТЬ ВСЕМ</button>
+        </div>
+
+        <!-- ТАБ: ЗАБЛОКИРОВАННЫЕ -->
+        <div id="banned" class="tab-content">
+            <h3>Черный список</h3>
+            <div id="banned-container"><div class="loader">Загрузка данных...</div></div>
+        </div>
+    </div>
+
+    <!-- МОДАЛЬНОЕ ОКНО -->
+    <div id="order-modal" class="modal-overlay">
+        <div class="modal">
+            <button class="modal-close" onclick="closeModal()">×</button>
+            <h2>Детали заказа</h2>
+            <div id="modal-content"></div>
+            <div class="modal-actions">
+                <button id="btn-delete" class="btn-primary btn-danger">🗑 Удалить заказ</button>
+                <button id="btn-ban" class="btn-primary">⛔ Заблокировать пользователя</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+
+        let allOrders = [];
+        let bannedUsersIds = [];
+        let currentSelectedOrder = null;
+        let currentPage = 1;
+
+        const STATUS_MAP = {
+            'pending': { text: '🟡 На рассмотрении', class: 'pending' },
+            'awaiting_payment': { text: '🟣 Ожидание оплаты', class: 'awaiting_payment' },
+            'accepted': { text: '🟢 В работе', class: 'accepted' },
+            'waitlist': { text: '🟠 В очереди', class: 'waitlist' },
+            'completed': { text: '✨ Завершен', class: 'completed' },
+            'declined': { text: '🔴 Отклонен', class: 'declined' },
+            'cancelled_by_client': { text: '❌ Отменен клиентом', class: 'declined' }
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        async function apiRequest(endpoint, bodyData = {}) {
+    let initData = tg.initData;
+    
+    if (!initData) {
+        const fallbackId = prompt("Тестовый режим (вне ТГ). ID админа:");
+        if (!fallbackId) throw new Error("Требуется ID");
+        initData = `user=${encodeURIComponent(JSON.stringify({ id: parseInt(fallbackId) }))}&hash=TEST_MODE`;
+    }
+    
+    bodyData.initData = initData;
+
+    const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bodyData)
+    });
+    if (!res.ok) throw new Error('Ошибка доступа или сервера');
+    return res.json();
+}
+
+        async function loadDashboard(page = 1) {
+            currentPage = page;
+            try {
+                const data = await apiRequest('/api/admin/dashboard', { page: currentPage });
+                allOrders = data.orders;
+                bannedUsersIds = data.bannedUsersIds; 
+                
+                document.getElementById('stats-container').innerHTML = `
+                    <div class="stat-card"><span>Всего</span><b>${data.stats.totalOrders}</b></div>
+                    <div class="stat-card"><span>В работе</span><b>${data.stats.activeCount}</b></div>
+                    <div class="stat-card"><span>Очередь</span><b>${data.stats.waitlistCount}</b></div>
+                `;
+
+                const ordersHtml = allOrders.map(o => {
+                    const status = STATUS_MAP[o.status] || { text: o.status, class: 'pending' };
+                    const isBanned = bannedUsersIds.includes(o.userId) ? ' <span style="color:red;">[ЗАБАНЕН]</span>' : '';
+                    return `
+                    <div class="order-card" onclick="openModal('${o._id}')">
+                        <div class="order-info">
+                            <strong>${o.username || 'Без имени'}${isBanned}</strong>
+                            <span>${o.format} | ${new Date(o.createdAt).toLocaleDateString('ru-RU')}</span>
+                        </div>
+                        <div class="badge ${status.class}">${status.text}</div>
+                    </div>
+                `}).join('');
+                document.getElementById('orders-container').innerHTML = ordersHtml || '<div class="loader">Заказов пока нет</div>';
+
+                let pageHtml = '';
+                if (data.currentPage > 1) {
+                    pageHtml += `<button class="tab-btn active" onclick="loadDashboard(${data.currentPage - 1})">⬅️ Назад</button>`;
+                }
+                pageHtml += `<span>Стр. ${data.currentPage} из ${data.totalPages || 1}</span>`;
+                if (data.currentPage < data.totalPages) {
+                    pageHtml += `<button class="tab-btn active" onclick="loadDashboard(${data.currentPage + 1})">Вперед ➡️</button>`;
+                }
+                document.getElementById('pagination').innerHTML = pageHtml;
+
+                const bannedHtml = data.bannedUsersList.map(u => `
+                    <div class="order-card" style="cursor: default;">
+                        <div class="order-info">
+                            <strong>${u.username}</strong>
+                            <span>ID: ${u.userId} | Блокировка: ${new Date(u.bannedAt).toLocaleDateString('ru-RU')}</span>
+                        </div>
+                        <button class="btn-primary btn-warning" style="width: auto; padding: 8px 16px; font-size: 13px;" onclick="toggleBan(${u.userId}, false)">Разблокировать</button>
+                    </div>
+                `).join('');
+                document.getElementById('banned-container').innerHTML = bannedHtml || '<div class="loader">Черный список пуст</div>';
+
+            } catch (err) {
+                document.getElementById('orders-container').innerHTML = `<div class="loader" style="color:red;">❌ ${err.message}</div>`;
+            }
+        }
+
+        function openModal(orderId) {
+            currentSelectedOrder = allOrders.find(o => o._id === orderId);
+            if (!currentSelectedOrder) return;
+            const o = currentSelectedOrder;
+            const status = STATUS_MAP[o.status] || { text: o.status };
+            const isBanned = bannedUsersIds.includes(o.userId);
+
+            let html = `
+                <div class="detail-row"><span>Клиент</span> ${o.username} (ID: ${o.userId})</div>
+                <div class="detail-row"><span>Статус</span> ${status.text}</div>
+                <div class="detail-row"><span>Формат</span> ${o.format}</div>
+                <div class="detail-row"><span>Покрас</span> ${o.color}</div>
+                <div class="detail-row"><span>ТЗ / Описание</span> ${o.description || '<i>Нет описания</i>'}</div>
+            `;
+            if (o.imageBase64) html += `<div class="detail-row"><span>Референс</span><img src="${o.imageBase64}" class="modal-img"></div>`;
+            
+            if (o.rating > 0) {
+                html += `<div class="detail-row" style="margin-top: 16px;"><span>Отзыв клиента</span> ${'⭐️'.repeat(o.rating)}<br><i>${o.reviewText || 'Без текста'}</i></div>`;
+            }
+            if (o.tipAmount > 0) {
+                html += `<div class="detail-row"><span>Оставленные Чаевые</span> <b>${o.tipAmount} ⭐️ Telegram Stars</b></div>`;
+            }
+
+            document.getElementById('modal-content').innerHTML = html;
+            document.getElementById('btn-delete').onclick = () => deleteOrder(o._id);
+            
+            const banBtn = document.getElementById('btn-ban');
+            if (isBanned) {
+                banBtn.innerText = '✅ Разблокировать пользователя';
+                banBtn.className = 'btn-primary btn-warning';
+                banBtn.onclick = () => toggleBan(o.userId, false);
+            } else {
+                banBtn.innerText = '⛔ Заблокировать пользователя';
+                banBtn.className = 'btn-primary';
+                banBtn.style.background = '#343a40';
+                banBtn.onclick = () => toggleBan(o.userId, true);
+            }
+
+            document.getElementById('order-modal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('order-modal').style.display = 'none'; currentSelectedOrder = null; }
+
+        async function deleteOrder(orderId) {
+            if (!confirm("Вы уверены, что хотите навсегда удалить этот заказ?")) return;
+            try { await apiRequest('/api/admin/order/delete', { orderId }); closeModal(); loadDashboard(currentPage); } 
+            catch (err) { alert(err.message); }
+        }
+
+        async function toggleBan(userId, ban) {
+            const actionText = ban ? "заблокировать" : "разблокировать";
+            if (!confirm(`Вы уверены, что хотите ${actionText} этого пользователя?`)) return;
+            try { await apiRequest('/api/admin/user/toggle-ban', { targetUserId: userId, ban }); closeModal(); loadDashboard(currentPage); } 
+            catch (err) { alert(err.message); }
+        }
+
+        let broadcastImageBase64 = null;
+
+        document.getElementById('bc-image-upload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const MAX = 1200;
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; } } 
+                    else { if (h > MAX) { w = Math.round(w * MAX / h); h = MAX; } }
+                    canvas.width = w; canvas.height = h;
+                    ctx.drawImage(img, 0, 0, w, h);
+                    
+                    broadcastImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+                    document.getElementById('bc-image-preview').src = broadcastImageBase64;
+                    document.getElementById('bc-upload-wrapper').style.display = 'none';
+                    document.getElementById('bc-preview-container').style.display = 'block';
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        document.getElementById('bc-remove-image').addEventListener('click', () => {
+            document.getElementById('bc-image-upload').value = '';
+            broadcastImageBase64 = null;
+            document.getElementById('bc-upload-wrapper').style.display = 'block';
+            document.getElementById('bc-preview-container').style.display = 'none';
+        });
+
+        document.getElementById('send-broadcast').addEventListener('click', async () => {
+            const text = document.getElementById('broadcast-text').value.trim();
+            if (!text && !broadcastImageBase64) return alert('Введите текст сообщения или прикрепите фото!');
+            
+            const btn = document.getElementById('send-broadcast');
+            btn.innerText = 'ОТПРАВКА...'; btn.disabled = true;
+
+            try {
+                const result = await apiRequest('/api/admin/broadcast', { text, imageBase64: broadcastImageBase64 });
+                alert(`✅ Рассылка успешно отправлена!\nПолучили сообщение: ${result.count} чел.`);
+
+                document.getElementById('broadcast-text').value = '';
+                document.getElementById('bc-remove-image').click();
+            } catch (err) { alert('Ошибка: ' + err.message); } 
+            finally { btn.innerText = 'ОТПРАВИТЬ ВСЕМ'; btn.disabled = false; }
+        });
+
+        loadDashboard(1);
+    </script>
+</body>
+</html>

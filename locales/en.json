@@ -1,0 +1,53 @@
+{
+"welcome": "🎨 Hello, {name}! Welcome to the our shop\n\nI am the artist's assistant bot. Here you can easily:\n✨ Check prices and styles\n📝 Create a request for your perfect art\n⏳ Track your place in the queue\n\nChoose an action from the menu below 👇",
+"btn_portfolio": "🖼 Portfolio",
+"btn_orders": "👤 My Orders",
+"btn_socials": "📱 Social Media",
+"btn_help": "❓ Help / FAQ",
+"btn_donate": "☕️ Support the Artist",
+"btn_lang": "🌍 Change Language (RU)",
+"socials_text": "I'll be glad to see you on my social networks! Subscribe to not miss new artworks 🎨\n\n📌 Telegram: @ArtChannel\n📌 Instagram: @ArtistGram",
+"help_text": "Frequently Asked Questions (FAQ) 💡\n\n1. How to order?\nClick the Menu button next to the chat, fill out the form and submit. The artist will review the details.\n\n2. How to pay?\nWe work on 100% prepayment. When your turn comes, the bot will send the payment details. Work begins only after you send a screenshot of the receipt.\n\n3. How does the queue work?\nTo maintain quality, only 3 arts are drawn at a time. If there are no slots, your order will be waitlisted. The bot will notify you when it's your turn!\n\n4. What is the turnaround time?\nOn average, 3 to 7 days from payment, depending on the complexity.\n\n5. Are revisions allowed?\nYes! Revisions during the sketch phase are free. Major changes after coloring are discussed individually.",
+"donate_text": "Thank you for supporting my art 💖\n\nYou can send any amount via Telegram Stars (⭐️). Choose a comfortable option:",
+"custom_sum": "✍️ Custom Amount",
+"enter_amount": "Enter the desired amount in Telegram Stars (from 1 to 10000):",
+"cancel": "❌ Cancel",
+"cancelled": "Action cancelled.",
+"no_orders": "You don't have any orders in your history yet",
+"lang_changed": "🇬🇧 Language successfully changed to English!",
+"msg_order_sent": "✅ Your request has been sent! The artist will review it soon",
+"msg_banned": "⛔ Your account is banned.",
+"msg_nsfw": "🔞 Request rejected by automatic safety system",
+
+"status_pending": "🟡 Pending",
+"status_awaiting_payment": "🟣 Awaiting payment",
+"status_accepted": "🟢 In progress",
+"status_waitlist": "🟠 In queue",
+"status_completed": "✨ Completed",
+"status_declined": "🔴 Declined",
+"status_cancelled_by_client": "❌ Cancelled",
+
+"order_queued": "📝 **Order added to queue**\nWe will contact you for payment when a slot opens up",
+"order_accepted": "✅ **Order approved**\nThe artist is ready to start working on it\nTo pay: **{price} UAH**\n💳 Payment details: `1234 5678 9000 0000`\n\n⚠️ **Be sure to include your ID in the payment comment:** `{orderId}`\n\nAfter the transfer, attach a screenshot of the receipt by pressing the button below",
+"queue_reached": "🎉 **Your turn has arrived**\nThe artist is ready to start\nAmount: **{price} UAH**\n💳 Details: `1234 5678 9000 0000`\n\nPlease transfer the payment and attach a screenshot of the receipt by clicking the button below. Work will not start without a receipt",
+"order_declined": "😔 Unfortunately, the artist declined your order. Please try again later",
+"user_banned": "⛔ Your account is banned",
+"payment_confirmed": "✅ **Payment confirmed**\nThe artist has already received the notification and will soon write to you in direct messages to discuss details, revisions, and the sketch",
+"payment_rejected": "❌ **Payment rejected.** The receipt is invalid. Please send it again",
+
+"btn_send_receipt": "📸 Send receipt",
+"btn_retry": "📸 Retry sending",
+"ask_receipt": "📸 Please send a screenshot of your payment receipt (photo):",
+"receipt_sent": "✅ Screenshot sent to the artist for review",
+
+"art_ready": "🎉 Your art is ready\nPlease rate the work and leave a tip if you like it ⭐️",
+"btn_review_tip": "⭐️ Review & Tip",
+"thanks_tip": "💖 Thank you so much for the tip ({amount} ⭐️)! The artist really appreciates your support",
+"thanks_donate": "💖 Thank you so much for donating ({amount} ⭐️)! This is very inspiring",
+
+"web_opt_sketch": "✏️ Sketch (+0 UAH)",
+"web_opt_flat": "🎨 Flat Colors (+50 UAH)",
+"web_opt_render": "✨ Full Render (+150 UAH)",
+
+"web_portfolio_title": "Portfolio Examples"
+}

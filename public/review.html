@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Оставить отзыв</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        :root { 
+            --bg: #F9FAFB; 
+            --surface: #ffffff;
+            --text: #111827; 
+            --muted: #6B7280; 
+            --border: #E5E7EB; 
+            --star-active: #FFB800; 
+            --star-inactive: #E5E7EB; 
+            --accent: #000000;
+        }
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 24px 20px 100px; 
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .lang-switch {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 8px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 10;
+        }
+        .lang-switch:active { transform: scale(0.95); }
+
+        .card {
+            background: var(--surface);
+            border-radius: 24px;
+            padding: 32px 20px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.03);
+            text-align: center;
+            border: 1px solid rgba(0,0,0,0.02);
+            margin-top: 30px;
+        }
+
+        h1 { font-size: 22px; font-weight: 800; margin: 0 0 8px 0; letter-spacing: -0.02em; }
+        p.subtitle { font-size: 14px; color: var(--muted); margin: 0 0 32px 0; line-height: 1.5; }
+        
+        .stars { 
+            display: flex; 
+            justify-content: center; 
+            gap: 12px; 
+            margin-bottom: 32px; 
+            flex-direction: row-reverse; 
+        }
+        .star { 
+            font-size: 46px; 
+            color: var(--star-inactive); 
+            cursor: pointer; 
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s, text-shadow 0.2s; 
+            user-select: none; 
+            line-height: 1;
+        }
+        .star:hover, .star:hover ~ .star, .star.active, .star.active ~ .star { 
+            color: var(--star-active); 
+            text-shadow: 0 4px 16px rgba(255, 184, 0, 0.4);
+        }
+        .star:active { transform: scale(0.85); }
+
+        textarea { 
+            width: 100%; 
+            padding: 16px; 
+            border-radius: 16px; 
+            border: 2px solid var(--border); 
+            font-family: 'Inter', sans-serif; 
+            font-size: 15px; 
+            min-height: 120px; 
+            box-sizing: border-box; 
+            resize: vertical; 
+            margin-bottom: 32px; 
+            background: var(--bg);
+            transition: 0.3s;
+            outline: none;
+            color: var(--text);
+        }
+        textarea:focus {
+            background: var(--surface);
+            border-color: var(--accent);
+        }
+        textarea::placeholder { color: #9CA3AF; }
+        
+        .tips-section { text-align: left; margin-bottom: 24px; }
+        .tips-section h3 { font-size: 15px; font-weight: 600; margin: 0 0 16px 0; display: flex; align-items: center; justify-content: space-between; color: var(--text); }
+        .tips-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+        
+        .tip-card { 
+            background: var(--surface); 
+            border: 2px solid var(--border); 
+            padding: 16px 8px; 
+            border-radius: 16px; 
+            cursor: pointer; 
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .tip-card .amount { font-weight: 800; font-size: 18px; color: var(--text); transition: 0.2s;}
+        .tip-card .icon { font-size: 20px; }
+        
+        .tip-card:active { transform: scale(0.95); }
+        .tip-card.selected { 
+            background: var(--accent); 
+            border-color: var(--accent); 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+        .tip-card.selected .amount { color: var(--surface); }
+        
+        .custom-tip { position: relative; margin-top: 12px; }
+        .custom-tip input { 
+            width: 100%; padding: 14px 16px; border-radius: 16px; 
+            border: 2px solid var(--border); font-family: 'Inter', sans-serif; 
+            font-size: 16px; color: var(--text); background: var(--surface); 
+            box-sizing: border-box; outline: none; transition: 0.2s; font-weight: 600; 
+        }
+        .custom-tip input:focus { border-color: var(--accent); }
+        .custom-tip input::placeholder { color: #9CA3AF; font-weight: 400; }
+        .custom-tip .icon { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; }
+
+        button.btn-submit { 
+            width: 100%; 
+            padding: 18px; 
+            background: var(--accent); 
+            color: #fff; 
+            font-weight: 600; 
+            border: none; 
+            border-radius: 16px; 
+            font-size: 16px; 
+            cursor: pointer; 
+            transition: 0.2s; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        button.btn-submit:active { transform: translateY(2px); }
+        button.btn-submit:disabled { background: var(--border); color: #9CA3AF; cursor: not-allowed; box-shadow: none; transform: none; }
+    </style>
+</head>
+<body>
+
+    <div class="lang-switch" onclick="toggleLang()">
+        🌍 <span id="current-lang">RU</span>
+    </div>
+
+    <div class="card">
+        <h1 data-i18n="review_title">Арт готов! 🎉</h1>
+        <p class="subtitle" data-i18n="review_subtitle">Вам понравился результат?<br>Оцените работу художника.</p>
+
+        <div class="stars">
+            <span class="star" data-value="5">★</span>
+            <span class="star" data-value="4">★</span>
+            <span class="star" data-value="3">★</span>
+            <span class="star" data-value="2">★</span>
+            <span class="star" data-value="1">★</span>
+        </div>
+
+        <textarea id="review-text" data-i18n-ph="review_ph" placeholder="Расскажите о ваших впечатлениях... (Необязательно)"></textarea>
+
+        <div class="tips-section">
+            <h3 data-i18n="review_tip_title">Оставить чаевые художнику</h3>
+            <div class="tips-grid">
+                <div class="tip-card" data-amount="50">
+                    <span class="amount">50</span>
+                    <span class="icon">⭐️</span>
+                </div>
+                <div class="tip-card" data-amount="100">
+                    <span class="amount">100</span>
+                    <span class="icon">⭐️</span>
+                </div>
+                <div class="tip-card" data-amount="250">
+                    <span class="amount">250</span>
+                    <span class="icon">⭐️</span>
+                </div>
+            </div>
+            
+            <div class="custom-tip">
+                <input type="number" id="custom-tip-input" min="1" data-i18n-ph="review_custom_tip" placeholder="Другая сумма...">
+                <span class="icon">⭐️</span>
+            </div>
+        </div>
+
+        <button id="btn-submit" class="btn-submit" disabled data-i18n="review_submit">Отправить отзыв</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const orderId = urlParams.get('orderId');
+
+        let currentRating = 0;
+        let selectedTip = 0;
+        let langDict = {};
+        let currentLangCode = 'ru';
+
+        async function loadLanguage(langOverride) {
+            let userLang = langOverride;
+            if (!userLang) {
+                userLang = urlParams.get('lang');
+                if (!userLang) {
+                    userLang = ['ru', 'uk', 'be', 'kk', 'uz'].includes(tg.initData?.user?.language_code) ? 'ru' : 'en';
+                }
+            }
+            currentLangCode = userLang;
+            document.getElementById('current-lang').innerText = currentLangCode.toUpperCase();
+            
+            try {
+                const res = await fetch(`/api/locales/${currentLangCode}`);
+                langDict = await res.json();
+                
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    if (langDict[el.getAttribute('data-i18n')]) {
+                        el.innerHTML = langDict[el.getAttribute('data-i18n')];
+                    }
+                });
+                document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+                    if (langDict[el.getAttribute('data-i18n-ph')]) {
+                        el.placeholder = langDict[el.getAttribute('data-i18n-ph')];
+                    }
+                });
+                
+                updateButtonText();
+            } catch (e) { console.error("Localization error", e); }
+        }
+
+        function toggleLang() {
+            const newLang = currentLangCode === 'ru' ? 'en' : 'ru';
+            loadLanguage(newLang);
+        }
+
+        function updateButtonText() {
+            const btn = document.getElementById('btn-submit');
+            if (selectedTip > 0) {
+                let template = langDict['review_btn_pay'] || `Оплатить {amount} ⭐️ и отправить`;
+                btn.innerText = template.replace('{amount}', selectedTip);
+            } else {
+                btn.innerText = langDict['review_submit'] || `Отправить отзыв`;
+            }
+        }
+
+        document.querySelectorAll('.star').forEach(star => {
+            star.addEventListener('click', function() {
+                document.querySelectorAll('.star').forEach(s => s.classList.remove('active'));
+                this.classList.add('active');
+                currentRating = parseInt(this.getAttribute('data-value'));
+                document.getElementById('btn-submit').disabled = false;
+            });
+        });
+
+        document.querySelectorAll('.tip-card').forEach(card => {
+            card.addEventListener('click', function() {
+                document.getElementById('custom-tip-input').value = '';
+                
+                if (this.classList.contains('selected')) {
+                    this.classList.remove('selected');
+                    selectedTip = 0;
+                } else {
+                    document.querySelectorAll('.tip-card').forEach(b => b.classList.remove('selected'));
+                    this.classList.add('selected');
+                    selectedTip = parseInt(this.getAttribute('data-amount'));
+                }
+                updateButtonText();
+            });
+        });
+
+        document.getElementById('custom-tip-input').addEventListener('input', function() {
+            document.querySelectorAll('.tip-card').forEach(b => b.classList.remove('selected'));
+            let val = parseInt(this.value);
+            selectedTip = (isNaN(val) || val < 1) ? 0 : val;
+            updateButtonText();
+        });
+
+        document.getElementById('btn-submit').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-submit');
+            const originalText = btn.innerText;
+            
+            btn.innerText = langDict['review_processing'] || 'Обработка...';
+            btn.disabled = true;
+
+            const text = document.getElementById('review-text').value;
+            const initData = tg.initData;
+
+            try {
+                if (selectedTip > 0) {
+                    btn.innerText = langDict['review_waiting'] || 'Ожидание оплаты...';
+                    const invRes = await fetch('/api/tip-invoice', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ orderId, amount: selectedTip, initData: initData })
+                    });
+                    const invData = await invRes.json();
+                    
+                    if (invData.invoiceLink) {
+                        tg.openInvoice(invData.invoiceLink, async (status) => {
+                            if (status === 'paid') {
+                                await submitReview(orderId, currentRating, text, initData);
+                            } else {
+                                tg.showAlert(langDict['review_cancel'] || "Оплата отменена. Отзыв пока не отправлен.");
+                                btn.innerText = originalText;
+                                btn.disabled = false;
+                            }
+                        });
+                        return;
+                    }
+                }
+
+                await submitReview(orderId, currentRating, text, initData);
+
+            } catch (err) {
+                tg.showAlert((langDict['review_error'] || "Системная ошибка: ") + err.message);
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        async function submitReview(orderId, rating, text, initData) {
+            const btn = document.getElementById('btn-submit');
+            const res = await fetch('/api/review', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId, rating, text, initData: initData })
+            });
+            
+            if (res.ok) {
+                tg.close();
+            } else {
+                const errText = await res.text();
+                tg.showAlert(errText || (langDict['review_error'] || "Произошла ошибка при отправке."));
+                btn.innerText = langDict['review_submit'] || "Отправить отзыв";
+                btn.disabled = false;
+            }
+        }
+
+        loadLanguage();
+    </script>
+</body>
+</html>
