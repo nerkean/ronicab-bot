@@ -1,4 +1,5 @@
-const { Telegraf, Markup, session, Scenes } = require('telegraf');
+const { Telegraf, Markup, Scenes, session } = require('telegraf');
+const SessionModel = require('./models/Session');
 const Order = require('./models/Order');
 const BannedUser = require('./models/BannedUser');
 const User = require('./models/User'); 
@@ -9,6 +10,15 @@ const en = require('./locales/en.json');
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
 const userLimits = new Map();
+
+setInterval(() => {
+    const now = Date.now();
+    for (const [userId, state] of userLimits.entries()) {
+        if (now - state.lastMessage > 60000) {
+            userLimits.delete(userId);
+        }
+    }
+}, 60000);  
 
 async function getMaxSlots() {
     let setting = await Settings.findOne({ key: 'max_slots' });
@@ -89,7 +99,7 @@ paymentScene.on('photo', async (ctx) => {
     const order = await Order.findById(orderId);
 
     await ctx.telegram.sendPhoto(process.env.ADMIN_ID, photoId, {
-        caption: `💸 **ПРОВЕРКА ОПЛАТЫ**\n👤 Клиент: ${order.username}\n🎨 Арт: ${order.format} (${order.color})\n💰 Сумма: **${order.price} грн**`, 
+        caption: `💸 ПРОВЕРКА ОПЛАТЫ\n👤 Клиент: ${order.username}\n🎨 Арт: ${order.format} (${order.color})\n💰 Сумма: ${order.price} грн`, 
         parse_mode: 'Markdown',
         ...Markup.inlineKeyboard([[Markup.button.callback('✅ Подтвердить', `confirm_payment_${orderId}`)], [Markup.button.callback('❌ Отклонить', `reject_payment_${orderId}`)]])
     });
@@ -136,7 +146,22 @@ uploadArtScene.on('photo', async (ctx) => {
 });
 
 const stage = new Scenes.Stage([paymentScene, customTipScene, uploadArtScene]);
-bot.use(session()); bot.use(stage.middleware());
+
+const store = {
+    get: async (key) => {
+        const sessionDoc = await SessionModel.findOne({ key });
+        return sessionDoc ? sessionDoc.data : undefined;
+    },
+    set: async (key, value) => {
+        await SessionModel.updateOne({ key }, { data: value }, { upsert: true });
+    },
+    delete: async (key) => {
+        await SessionModel.deleteOne({ key });
+    }
+};
+
+bot.use(session({ store })); 
+bot.use(stage.middleware());
 
 function getMainMenu(ctx) {
     return Markup.keyboard([

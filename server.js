@@ -7,6 +7,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
+const multer = require('multer');
 
 const Order = require('./models/Order');
 const BannedUser = require('./models/BannedUser');
@@ -14,6 +15,11 @@ const User = require('./models/User');
 const Settings = require('./models/Settings');
 const ru = require('./locales/ru.json');
 const en = require('./locales/en.json');
+
+const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 }
+});
 
 async function getUserT(userId) {
     const user = await User.findOne({ userId });
@@ -67,9 +73,10 @@ module.exports = function createServer(bot) {
         res.sendFile(path.join(__dirname, 'locales', `${lang}.json`));
     });
 
-    app.post('/api/order', orderLimiter, async (req, res) => {
+    app.post('/api/order', orderLimiter, upload.single('image'), async (req, res) => {
         try {
-            const { format, color, description, imageBase64, initData, isUrgent, price } = req.body;
+            const { format, color, description, initData } = req.body;
+            const isUrgent = req.body.isUrgent === 'true';
             
             if (!verifyTelegramWebAppData(initData, process.env.BOT_TOKEN)) {
                 return res.status(403).send('Невалидная подпись Telegram');
@@ -77,19 +84,23 @@ module.exports = function createServer(bot) {
             
             const user = getUserFromInitData(initData);
             if (!user) return res.status(400).send('Ошибка пользователя');
-            
+
+            const priceMap = { format: { "Full body": 250, "Half body": 150, "Avatar": 100 }, color: { "Sketch": 0, "Flat Colors": 50, "Full Render": 150 } };
+            const basePrice = (priceMap.format[format] || 0) + (priceMap.color[color] || 0);
+            const calculatedPrice = isUrgent ? Math.round(basePrice * 1.5) : basePrice;
+
             const tClient = await getUserT(user.id);
             const isBanned = await BannedUser.findOne({ userId: user.id });
-            if (isBanned) {
-                await bot.telegram.sendMessage(user.id, tClient('msg_banned'));
-                return res.status(403).send(tClient('msg_banned'));
-            }
+            if (isBanned) return res.status(403).send(tClient('msg_banned'));
 
             let imageBuffer = null;
+            let imageBase64 = null;
             let isSafeContent = true;
 
-            if (imageBase64) {
-                imageBuffer = Buffer.from(imageBase64.split(',')[1], 'base64');
+            if (req.file) {
+                imageBuffer = req.file.buffer;
+                imageBase64 = `data:${req.file.mimetype};base64,${imageBuffer.toString('base64')}`;
+
                 const form = new FormData();
                 form.append('media', imageBuffer, { filename: 'reference.jpg' });
                 form.append('models', 'nudity,gore'); 
@@ -101,7 +112,9 @@ module.exports = function createServer(bot) {
                     if (response.data.status === 'success' && (response.data.nudity.safe < 0.5 || response.data.gore.prob > 0.5)) {
                         isSafeContent = false;
                     }
-                } catch (err) { console.error("⚠️ Ошибка Sightengine:", err.message); }
+                } catch (err) { 
+                    console.error("⚠️ [Sightengine API] Ошибка проверки фото:", err.response ? err.response.data : err.message); 
+                }
             }
 
             if (!isSafeContent) return res.status(400).send(tClient('msg_nsfw'));
@@ -113,14 +126,14 @@ module.exports = function createServer(bot) {
                 color: color,
                 description: description,
                 imageBase64: imageBase64,
-                price: price,
+                price: calculatedPrice,
                 isUrgent: isUrgent,
                 status: 'pending'
             });
             await newOrder.save();
 
-            const urgentText = isUrgent ? `\n🚨 **СРОЧНЫЙ ЗАКАЗ (ВНЕ ОЧЕРЕДИ)** 🚨` : '';
-            const adminText = `🚨 **НОВЫЙ ЗАКАЗ!**${urgentText}\n👤 Клиент: ${newOrder.username}\n📐 Формат: ${format}\n🎨 Цвет: ${color}\n💰 Итоговая сумма: **${price} грн**\n📝 Описание: ${description}`;
+            const urgentText = isUrgent ? `\n🚨 СРОЧНЫЙ ЗАКАЗ (ВНЕ ОЧЕРЕДИ) 🚨` : '';
+            const adminText = `🚨 НОВЫЙ ЗАКАЗ${urgentText}\n👤 Клиент: ${newOrder.username}\n📐 Формат: ${format}\n🎨 Цвет: ${color}\n💰 Итоговая сумма: ${calculatedPrice} грн\n📝 Описание: ${description}`;
             
             const keyboard = Markup.inlineKeyboard([
                 [Markup.button.callback('✅ Принять заказ', `accept_${newOrder._id}`)],
@@ -136,7 +149,10 @@ module.exports = function createServer(bot) {
 
             await bot.telegram.sendMessage(user.id, tClient('msg_order_sent'));
             res.sendStatus(200); 
-        } catch (error) { res.status(500).send('Ошибка сервера'); }
+        } catch (error) { 
+            console.error('[API /api/order] КРИТИЧЕСКАЯ ОШИБКА:', error);
+            res.status(500).send('Внутренняя ошибка сервера. Пожалуйста, попробуйте позже'); 
+        }
     });
 
     app.post('/api/tip-invoice', async (req, res) => {
@@ -173,7 +189,10 @@ module.exports = function createServer(bot) {
             const channelText = `${starsStr}\n**Отзыв от ${order.username}**\n\n"${text || 'Без комментариев'}"`;
             await bot.telegram.sendMessage(process.env.REVIEWS_CHANNEL_ID, channelText, { parse_mode: 'Markdown' });
             res.json({ success: true });
-        } catch (error) { res.status(500).send('Ошибка'); }
+        } catch (error) { 
+            console.error('[API /api/review] ОШИБКА:', error);
+            res.status(500).send('Внутренняя ошибка сервера. Пожалуйста, попробуйте позже'); 
+        }
     });
 
     const checkAdmin = (req, res, next) => {
@@ -215,12 +234,18 @@ module.exports = function createServer(bot) {
             const activeCount = await Order.countDocuments({ status: { $in: ['accepted', 'awaiting_payment'] } });
             
             res.json({ orders, bannedUsersIds, bannedUsersList, currentPage: page, totalPages: totalPages, stats: { totalOrders, waitlistCount, activeCount } });
-        } catch (error) { res.status(500).send('Ошибка сервера'); }
+        } catch (error) { 
+            console.error('[API /api/admin/dashboard] ОШИБКА:', error);
+            res.status(500).send('Внутренняя ошибка сервера. Пожалуйста, попробуйте позже'); 
+         }
     });
 
     app.post('/api/admin/order/delete', checkAdmin, async (req, res) => {
         try { await Order.findByIdAndDelete(req.body.orderId); res.json({ success: true }); } 
-        catch (error) { res.status(500).send('Ошибка'); }
+        catch (error) { 
+            console.error('[API /api/admin/order/delete] ОШИБКА:', error);
+            res.status(500).send('Внутренняя ошибка сервера. Пожалуйста, попробуйте позже'); 
+        }
     });
 
     app.post('/api/admin/user/toggle-ban', checkAdmin, async (req, res) => {
@@ -229,7 +254,10 @@ module.exports = function createServer(bot) {
             if (ban) await BannedUser.updateOne({ userId: targetUserId }, { userId: targetUserId }, { upsert: true });
             else await BannedUser.deleteOne({ userId: targetUserId });
             res.json({ success: true });
-        } catch (error) { res.status(500).send('Ошибка'); }
+        } catch (error) { 
+            console.error('[API /api/admin/user/toggle-ban] ОШИБКА:', error);
+            res.status(500).send('Внутренняя ошибка сервера. Пожалуйста, попробуйте позже'); 
+        }
     });
 
     app.post('/api/admin/broadcast', checkAdmin, async (req, res) => {
@@ -249,14 +277,20 @@ module.exports = function createServer(bot) {
                 } catch(e) { }
             }
             res.json({ success: true, count: successCount });
-        } catch (error) { res.status(500).send('Ошибка рассылки'); }
+        } catch (error) { 
+            console.error('[API /api/admin/broadcast] ОШИБКА:', error);
+            res.status(500).send('Внутренняя ошибка сервера. Пожалуйста, попробуйте позже'); 
+        }
     });
 
     app.post('/api/admin/settings', checkAdmin, async (req, res) => {
         try {
             let setting = await Settings.findOne({ key: 'max_slots' });
             res.json({ maxSlots: setting ? setting.value : 3 });
-        } catch (error) { res.status(500).send('Ошибка сервера'); }
+        } catch (error) {
+            console.error('[API /api/admin/settings] ОШИБКА:', error);
+            res.status(500).send('Внутренняя ошибка сервера. Пожалуйста, попробуйте позже'); 
+        }
     });
 
     app.post('/api/admin/settings/update', checkAdmin, async (req, res) => {
@@ -264,7 +298,10 @@ module.exports = function createServer(bot) {
             const { maxSlots } = req.body;
             await Settings.findOneAndUpdate({ key: 'max_slots' }, { value: parseInt(maxSlots) }, { upsert: true });
             res.json({ success: true });
-        } catch (error) { res.status(500).send('Ошибка сервера'); }
+        } catch (error) { 
+            console.error('[API /api/admin/settings/update] ОШИБКА:', error);
+            res.status(500).send('Внутренняя ошибка сервера. Пожалуйста, попробуйте позже'); 
+        }
     });
 
     return app;

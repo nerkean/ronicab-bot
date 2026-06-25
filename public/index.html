@@ -53,34 +53,88 @@
         button.btn-submit:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
 
 .portfolio-slider { 
-    display: flex; 
-    gap: 12px; 
-    overflow-x: auto; 
-    padding-bottom: 12px; 
-    scroll-snap-type: x mandatory; 
-    -webkit-overflow-scrolling: touch;
+    display: grid; 
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px; 
+    padding-bottom: 4px;
 }
 .portfolio-slider::-webkit-scrollbar { height: 4px; }
 .portfolio-slider::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 .portfolio-item { 
-    flex: 0 0 140px; 
-    scroll-snap-align: start; 
     display: flex; 
     flex-direction: column; 
-    gap: 8px; 
+    gap: 6px; 
 }
 .portfolio-item img { 
     width: 100%; 
-    height: 180px; 
+    height: 130px;
     object-fit: cover; 
     border-radius: 12px; 
     border: 1px solid var(--border); 
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.portfolio-item img:active {
+    transform: scale(0.95);
 }
 .portfolio-item span { 
-    font-size: 13px; 
+    font-size: 12px;
     font-weight: 600; 
     text-align: center; 
     color: var(--muted); 
+}
+
+#preview { 
+    cursor: pointer; 
+    transition: transform 0.2s; 
+}
+#preview:active { 
+    transform: scale(0.95); 
+}
+
+.image-modal {
+    display: none; 
+    position: fixed; 
+    z-index: 1000; 
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    height: 100%; 
+    background-color: rgba(0, 0, 0, 0.85); 
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    align-items: center;
+    justify-content: center;
+}
+.image-modal.show {
+    display: flex;
+    opacity: 1;
+}
+.image-modal .modal-content {
+    max-width: 90%;
+    max-height: 85vh;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    object-fit: contain;
+}
+.image-modal .close-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    color: white;
+    font-size: 32px;
+    font-weight: bold;
+    cursor: pointer;
+    background: rgba(0,0,0,0.5);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
 }
     </style>
 </head>
@@ -166,32 +220,49 @@
         <button id="submit-btn" class="btn-submit" data-i18n="web_submit">Отправить заявку</button>
     </div>
 
+    <div id="image-modal" class="image-modal">
+        <div class="close-btn">&times;</div>
+        <img class="modal-content" id="modal-img">
+    </div>
+
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready(); tg.expand();
 
         let currentPrice = 0;
-        let uploadedImageBase64 = null;
+        let uploadedImageBlob = null;
         let langDict = {};
         let currentLangCode = 'ru';
 
         async function loadLanguage(langOverride) {
-            const code = langOverride || tg.initData?.user?.language_code || 'ru';
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlLang = urlParams.get('lang');
+
+            const code = langOverride || urlLang || tg.initDataUnsafe?.user?.language_code || 'ru';
+            
             currentLangCode = ['ru', 'uk', 'be', 'kk', 'uz'].includes(code) ? 'ru' : 'en';
             
-            document.getElementById('current-lang').innerText = currentLangCode.toUpperCase();
+            const langBtn = document.getElementById('current-lang');
+            if (langBtn) langBtn.innerText = currentLangCode.toUpperCase();
             
             try {
                 const res = await fetch(`/api/locales/${currentLangCode}`);
                 langDict = await res.json();
                 
                 document.querySelectorAll('[data-i18n]').forEach(el => {
-                    if (langDict[el.getAttribute('data-i18n')]) el.innerHTML = langDict[el.getAttribute('data-i18n')];
+                    if (langDict[el.getAttribute('data-i18n')]) {
+                        el.innerHTML = langDict[el.getAttribute('data-i18n')];
+                    }
                 });
                 document.querySelectorAll('[data-i18n-ph]').forEach(el => {
-                    if (langDict[el.getAttribute('data-i18n-ph')]) el.placeholder = langDict[el.getAttribute('data-i18n-ph')];
+                    if (langDict[el.getAttribute('data-i18n-ph')]) {
+                        el.placeholder = langDict[el.getAttribute('data-i18n-ph')];
+                    }
                 });
-            } catch (e) { console.error("i18n error", e); }
+            } catch (e) { 
+                console.error("Ошибка загрузки перевода:", e); 
+            }
+            
             document.body.classList.remove('loading');
         }
 
@@ -213,7 +284,30 @@
         }
 
         document.querySelectorAll('.price-trigger').forEach(el => el.addEventListener('change', calculatePrice));
+        calculatePrice();
         loadLanguage();
+
+        const modal = document.getElementById('image-modal');
+        const modalImg = document.getElementById('modal-img');
+        const previewImg = document.getElementById('preview');
+
+        previewImg.addEventListener('click', function() {
+            if (this.src) {
+                modalImg.src = this.src;
+                modal.classList.add('show');
+            }
+        });
+
+        document.querySelectorAll('.portfolio-item img').forEach(img => {
+            img.addEventListener('click', function() {
+                modalImg.src = this.src;
+                modal.classList.add('show');
+            });
+        });
+
+        modal.addEventListener('click', function() {
+            modal.classList.remove('show');
+        });
 
         document.getElementById('image').addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -230,9 +324,12 @@
                     canvas.width = w; canvas.height = h;
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, w, h);
-                    uploadedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
                     
-                    document.getElementById('preview').src = uploadedImageBase64;
+                    canvas.toBlob((blob) => {
+                        uploadedImageBlob = blob;
+                    }, 'image/jpeg', 0.8);
+
+                    document.getElementById('preview').src = canvas.toDataURL('image/jpeg', 0.8);
                     document.getElementById('preview').style.display = 'block';
                     document.getElementById('upload-text').innerText = langDict['web_upload_ok'] || '✅ Фото загружено';
                 };
@@ -242,34 +339,40 @@
         });
 
         document.getElementById('submit-btn').addEventListener('click', async () => {
-    const btn = document.getElementById('submit-btn');
-    btn.disabled = true;
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
 
-    const payload = {
-        format: document.getElementById('format').value,
-        color: document.getElementById('color').value,
-        description: document.getElementById('description').value,
-        imageBase64: uploadedImageBase64,
-        price: currentPrice,
-        isUrgent: document.getElementById('urgent').checked,
-        initData: tg.initData
-    };
+            const formData = new FormData();
+            formData.append('format', document.getElementById('format').value);
+            formData.append('color', document.getElementById('color').value);
+            formData.append('description', document.getElementById('description').value);
+            formData.append('isUrgent', document.getElementById('urgent').checked);
+            
+            let initData = tg.initData;
+            if (!initData) {
+                const fallbackId = prompt("ID:") || 1;
+                initData = `user=${encodeURIComponent(JSON.stringify({ id: parseInt(fallbackId) }))}&hash=TEST_MODE`;
+            }
+            formData.append('initData', initData);
 
-    if (!payload.initData) {
-        const fallbackId = prompt("ID:") || 1;
-        payload.initData = `user=${encodeURIComponent(JSON.stringify({ id: parseInt(fallbackId) }))}&hash=TEST_MODE`;
-    }
+            if (uploadedImageBlob) {
+                formData.append('image', uploadedImageBlob, 'reference.jpg');
+            }
 
-    try {
-        const res = await fetch('/api/order', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        if (res.ok) tg.close();
-        else tg.showAlert(await res.text());
-    } catch (error) { 
-        tg.showAlert(langDict['web_error'] || "Системная ошибка."); 
-    } finally { 
-        btn.disabled = false; 
-    }
-});
+            try {
+                const res = await fetch('/api/order', { 
+                    method: 'POST', 
+                    body: formData 
+                });
+                
+                if (res.ok) tg.close();
+                else tg.showAlert(await res.text());
+            } catch (error) { 
+                tg.showAlert(langDict['web_error'] || "Системная ошибка"); 
+            } finally { 
+                btn.disabled = false; 
+            }
+        });
     </script>
 </body>
 </html>

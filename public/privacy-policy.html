@@ -4,121 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Политика конфиденциальности</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
     
     <style>
-        :root {
-            --bg-color: #ffffff;
-            --text-main: #000000;
-            --text-muted: #666666;
-            --border-color: #E5E5E5;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            -webkit-font-smoothing: antialiased;
-            line-height: 1.6;
-        }
-
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 32px 24px 64px;
-            animation: fadeIn 0.6s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        h1 {
-            font-size: 28px;
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            margin-top: 0;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 32px;
-        }
-
-        h2 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-top: 32px;
-            margin-bottom: 12px;
-            border-bottom: 1px solid var(--border-color);
-            padding-bottom: 8px;
-            color: var(--text-main);
-        }
-
-        p {
-            font-size: 15px;
-            margin-bottom: 16px;
-            color: #333333;
-        }
-
-        ul {
-            margin-bottom: 24px;
-            padding-left: 20px;
-        }
-
-        li {
-            font-size: 15px;
-            margin-bottom: 8px;
-            color: #333333;
-        }
-
-        strong {
-            color: var(--text-main);
-            font-weight: 600;
-        }
+        :root { --bg-color: #ffffff; --text-main: #000000; --text-muted: #666666; --border-color: #E5E5E5; }
+        body { font-family: 'Inter', sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 0; -webkit-font-smoothing: antialiased; line-height: 1.6; transition: opacity 0.3s; }
+        body.loading { opacity: 0; }
+        
+        .container { max-width: 600px; margin: 0 auto; padding: 32px 24px 64px; }
+        .lang-switch { position: absolute; top: 16px; right: 16px; background: #f9f9f9; border: 1px solid var(--border-color); padding: 8px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); z-index: 10; }
+        
+        h1 { font-size: 28px; font-weight: 800; letter-spacing: -0.03em; margin: 0 0 8px 0; }
+        .subtitle { font-size: 14px; color: var(--text-muted); margin-bottom: 32px; }
+        h2 { font-size: 18px; font-weight: 600; margin: 32px 0 12px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        p, li { font-size: 15px; margin-bottom: 16px; color: #333333; }
+        ul { margin-bottom: 24px; padding-left: 20px; }
+        li { margin-bottom: 8px; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <h1>Политика конфиденциальности.</h1>
-        <div class="subtitle">Использование данных и безопасность Telegram Web App</div>
+<body class="loading">
+    <div class="lang-switch" onclick="toggleLang()">🌍 <span id="current-lang">RU</span></div>
 
-        <p>Добро пожаловать в Telegram-бота для оформления заказов на арты. Мы с уважением относимся к вашим личным данным и обязуемся защищать вашу конфиденциальность.</p>
+    <div class="container">
+        <h1 data-i18n="privacy_title">Политика конфиденциальности.</h1>
+        <div class="subtitle" data-i18n="privacy_subtitle">Использование данных и безопасность Telegram Web App</div>
+
+        <p data-i18n="privacy_p1">Добро пожаловать в Telegram-бота для оформления заказов на арты. Мы с уважением относимся к вашим личным данным и обязуемся защищать вашу конфиденциальность.</p>
         
-        <h2>1. Какие данные мы собираем</h2>
+        <h2 data-i18n="privacy_h1">1. Какие данные мы собираем</h2>
         <ul>
-            <li><strong>Базовые данные профиля Telegram:</strong> Ваш Telegram ID, имя пользователя (@username), имя и фамилия (если указаны). Эта информация передается боту самим мессенджером.</li>
-            <li><strong>Информация о заказе:</strong> Детали заказа (формат, цвет), текстовое описание (ТЗ) и любые ссылки, которые вы предоставляете.</li>
-            <li><strong>Медиафайлы:</strong> Изображения (референсы), которые вы загружаете через форму оформления.</li>
+            <li data-i18n="privacy_l1_1"><strong>Базовые данные профиля Telegram:</strong> Ваш Telegram ID, имя пользователя (@username), имя и фамилия (если указаны). Эта информация передается боту самим мессенджером.</li>
+            <li data-i18n="privacy_l1_2"><strong>Информация о заказе:</strong> Детали заказа (формат, цвет), текстовое описание (ТЗ) и любые ссылки, которые вы предоставляете.</li>
+            <li data-i18n="privacy_l1_3"><strong>Медиафайлы:</strong> Изображения (референсы), которые вы загружаете через форму оформления.</li>
         </ul>
         
-        <h2>2. Как мы используем ваши данные</h2>
-        <p>Мы используем собранную информацию исключительно в следующих целях:</p>
+        <h2 data-i18n="privacy_h2">2. Как мы используем ваши данные</h2>
+        <p data-i18n="privacy_p2">Мы используем собранную информацию исключительно в следующих целях:</p>
         <ul>
-            <li><strong>Обработка заказов:</strong> Для связи с вами, уточнения деталей и выполнения вашей заявки художником.</li>
-            <li><strong>Безопасность:</strong> Все загруженные изображения автоматически проверяются нейросетью (Sightengine API) на наличие запрещенного контента (18+). Картинки, не прошедшие проверку, моментально отклоняются и не доходят до художника.</li>
+            <li data-i18n="privacy_l2_1"><strong>Обработка заказов:</strong> Для связи с вами, уточнения деталей и выполнения вашей заявки художником.</li>
+            <li data-i18n="privacy_l2_2"><strong>Безопасность:</strong> Все загруженные изображения автоматически проверяются нейросетью (Sightengine API) на наличие запрещенного контента (18+). Картинки, не прошедшие проверку, моментально отклоняются.</li>
         </ul>
         
-        <h2>3. Защита и передача данных</h2>
-        <p>Мы гарантируем, что ваши личные данные, идеи заказов и загруженные референсы:</p>
+        <h2 data-i18n="privacy_h3">3. Защита и передача данных</h2>
+        <p data-i18n="privacy_p3">Мы гарантируем, что ваши личные данные, идеи заказов и загруженные референсы:</p>
         <ul>
-            <li><strong>Не передаются</strong>, не продаются и не сдаются в аренду третьим лицам или рекламным сетям.</li>
-            <li><strong>Используются только</strong> администратором (художником) для выполнения конкретного заказа.</li>
-            <li><strong>Хранятся</strong> в защищенной базе данных MongoDB, доступ к которой строго ограничен.</li>
+            <li data-i18n="privacy_l3_1"><strong>Не передаются</strong>, не продаются и не сдаются в аренду третьим лицам или рекламным сетям.</li>
+            <li data-i18n="privacy_l3_2"><strong>Используются только</strong> администратором (художником) для выполнения конкретного заказа.</li>
+            <li data-i18n="privacy_l3_3"><strong>Хранятся</strong> в защищенной базе данных MongoDB, доступ к которой строго ограничен.</li>
         </ul>
         
-        <h2>4. Ваши права</h2>
-        <p>Вы в любой момент можете попросить нас удалить историю ваших заказов из нашей базы данных, обратившись к художнику напрямую в личные сообщения.</p>
+        <h2 data-i18n="privacy_h4">4. Ваши права</h2>
+        <p data-i18n="privacy_p4">Вы в любой момент можете попросить нас удалить историю ваших заказов из нашей базы данных, обратившись к художнику напрямую в личные сообщения.</p>
         
-        <h2>5. Согласие с правилами</h2>
-        <p>Используя нашего бота и отправляя форму заказа, вы автоматически соглашаетесь с условиями данной Политики конфиденциальности.</p>
+        <h2 data-i18n="privacy_h5">5. Согласие с правилами</h2>
+        <p data-i18n="privacy_p5">Используя нашего бота и отправляя форму заказа, вы автоматически соглашаетесь с условиями данной Политики конфиденциальности.</p>
     </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
+        let langDict = {};
+        let currentLangCode = 'ru';
+
+        async function loadLanguage(langOverride) {
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlLang = urlParams.get('lang');
+            const code = langOverride || urlLang || tg.initDataUnsafe?.user?.language_code || 'ru';
+            currentLangCode = ['ru', 'uk', 'be', 'kk', 'uz'].includes(code) ? 'ru' : 'en';
+            
+            document.getElementById('current-lang').innerText = currentLangCode.toUpperCase();
+            
+            try {
+                const res = await fetch(`/api/locales/${currentLangCode}`);
+                langDict = await res.json();
+                
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    if (langDict[el.getAttribute('data-i18n')]) {
+                        el.innerHTML = langDict[el.getAttribute('data-i18n')];
+                    }
+                });
+            } catch (e) { console.error("Ошибка загрузки:", e); }
+            document.body.classList.remove('loading');
+        }
+
+        function toggleLang() {
+            loadLanguage(currentLangCode === 'ru' ? 'en' : 'ru');
+        }
+
+        loadLanguage();
+    </script>
 </body>
 </html>
